@@ -301,14 +301,14 @@ namespace Teacher
                     
                     byte[] bytes = Encoding.UTF8.GetBytes(message);
 
-                    if (bytes.Length > MAX_MESSAGE_SIZE)
+                    if (bytes.Length > Program.MESSAGE_SIZE)
                     {
-                        Trace.WriteLine($"Message size ({bytes.Length} bytes) exceeds the maximum limit of {MAX_MESSAGE_SIZE} bytes. Truncating the message.");
+                        Trace.WriteLine($"Message size ({bytes.Length} bytes) exceeds the maximum limit of {Program.MESSAGE_SIZE} bytes. Truncating the message.");
                         return;
                     }
 
                     // KAU : 메세지를 Packet으로 Chunk해서 Send -> 필요하면 메소드화 인자를 여러개 넘겨줘야해서 따로 만들지 않음
-                    else if (bytes.Length > 1500 && bytes.Length <= MAX_MESSAGE_SIZE) {
+                    else if (bytes.Length > 1500 && bytes.Length <= Program.MESSAGE_SIZE) {
 
                         int offset = 0;
                         int packetCount = 0; // 패킷 번호 카운터
@@ -329,22 +329,25 @@ namespace Teacher
                             Array.Copy(bytes, offset, buffer, headerBytes.Length, length);
 
                             // UDP 패킷 생성 및 전송
-                            int ret = client.Send(bytes, bytes.Length, ip);
+                            int ret = client.Send(buffer, buffer.Length, ip);
                             offset += length;
                             packetCount++; // 패킷 번호 증가
 
                             // 디버그 메시지 출력
                             Trace.WriteLine($"{packetCount}번째 패킷 전송 완료");
                             // KAU
-                            if (ret != 0 && ret != bytes.Length)
+                            if (ret != 0 && ret != buffer.Length)
                             {
-
-                                OnSendMessage(message);
-                                Trace.WriteLine("Message sent successfully.");
+                                Trace.WriteLine($"Message not fully sent. Sent {ret} bytes out of {buffer.Length}.");
                             }
                             else
                             {
-                                Trace.WriteLine($"Message not fully sent. Sent {ret} bytes out of {bytes.Length}.");
+                                // 메시지의 앞부분 30글자만 잘라서 표시
+                                string truncatedMessage = Encoding.UTF8.GetString(buffer, 0, Math.Min(buffer.Length, 30));
+
+
+                                OnSendMessage(truncatedMessage);
+                                Trace.WriteLine("Message sent successfully.");
                             }
                             
                         }
@@ -362,10 +365,7 @@ namespace Teacher
             }            
         }
 
-        // KAU
-        public void ChunkMessage(string message,Socket socket)
-        {            
-        }
+        
         /*Handler를 Main에서 호출하여 Send/Receive 사용*/
         public delegate void SendMessageHandler(string message);
         public event SendMessageHandler OnSendMessage;

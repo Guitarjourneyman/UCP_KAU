@@ -11,7 +11,7 @@ namespace Teacher
     {
         //KAU 
         private static bool startThread = true;
-        public const int MESSAGE_SIZE = 65000;
+        public const int MESSAGE_SIZE = 61440;
         public const int PACKET_SIZE = 1024; // 단위 패킷 크기 (1KB)
         private static int receiveNum = 1;
         private static int sendNum = 1;
@@ -83,7 +83,7 @@ namespace Teacher
             // 지정된 크기의 연속된 "A" 문자 생성
 
             StringBuilder messageBuilder = new StringBuilder(MESSAGE_SIZE);
-            string timestamp = " [TeacherTime]: " + $"[{DateTime.Now:HH:mm:ss.fff}]";
+            string timestamp = " TeacherTime: " + $"[{DateTime.Now:HH:mm:ss.fff}]";
             int len = timestamp.Length;
 
             for (int i = 0; i < MESSAGE_SIZE - len; i++)
@@ -97,7 +97,7 @@ namespace Teacher
 
                 // 업데이트 예정
                 teacherManager.Send(message);
-                Thread.Sleep(50); // 50ms 대기
+                Thread.Sleep(1000); // 50ms 대기
             }
         }
 

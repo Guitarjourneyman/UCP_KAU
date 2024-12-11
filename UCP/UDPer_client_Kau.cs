@@ -32,8 +32,8 @@ namespace Student
 
         // KAU
         public int TOTAL_PACKETS; // 전체 패킷 수 (필요에 맞게 수정)
-        private int array_index;
-        private int ignored_bits;
+        private static int ARRAY_INDEX;
+        private static int IGNORED_BITS;
         private static byte[] checkNewMessage;
         private static byte[] lastMessage; // 이전 배열(배열에 변화가 생겼을 때만 ack 전송)
         private const bool MESSAGE_NUM = true;
@@ -74,8 +74,14 @@ namespace Student
                 udp.Client.Bind(localEp);
                 
                 // KAU 
-                int array_index = CalculateBits(TOTAL_PACKETS, 0);
-                int ignored_bits = CalculateBits(TOTAL_PACKETS, 1);
+                ARRAY_INDEX = CalculateBits(TOTAL_PACKETS, 0);
+                IGNORED_BITS = CalculateBits(TOTAL_PACKETS, 1);
+                // 패킷 수에 맞는 배열 생성
+                checkNewMessage = new byte[ARRAY_INDEX];
+                InitializeCheckNewMessage();
+
+                // lastMessage에 저장
+                lastMessage = (byte[])checkNewMessage.Clone();
 
                 StartListening();
 
@@ -135,18 +141,16 @@ namespace Student
                     if (OnReceiveMessage != null)
                     {
                         // 자신이 보낸 UDP Broadcast가 아닌 경우만
-                        if (localIPAddress != null && !ip.Address.Equals(localIPAddress))
+                        if //(localIPAddress != null && !ip.Address.Equals(localIPAddress))
+                            (localIPAddress != null)
                         {
-                            // 메시지의 앞부분 10글자만 잘라서 표시
-                            String truncatedMessage = message.Length > 10
-                                    ? message.Substring(0, 10)
+                            // 메시지의 앞부분 30글자만 잘라서 표시
+                            string truncatedMessage = message.Length > 30
+                                    ? message.Substring(0, 30)
                                     : message;
                             
                             
-                            // 패킷 수에 맞는 배열 생성
-                            checkNewMessage = new byte[array_index];
-                            // lastMessage에 저장
-                            lastMessage = (byte[])checkNewMessage.Clone();
+                            
                             // 메시지 출력
                             OnReceiveMessage(truncatedMessage);
 
@@ -161,15 +165,20 @@ namespace Student
                                 // 해당 메세지 번호의 받은 패킷 번호에 맞는 배열의 index를 set
                                 SetNewMsgBit(packet_num);
                                 // 비트맵 출력
-                                PrintByteArrayAsBinary(checkNewMessage);
+                                // PrintByteArrayAsBinary(checkNewMessage);
+
+                                // Trace.WriteLine($"Received {message_num} message");
                             }
                             else
                             {
                                 Trace.WriteLine("Received wrong message");
                             }
                         }
+
                     }
                 }
+                
+
             }
             catch (SocketException se)
             {
@@ -215,13 +224,13 @@ namespace Student
             {
                 // 비트가 0이라면 1로 설정
                 checkNewMessage[byteIndex] |= (byte)(1 << bitIndex);
-                Console.WriteLine($"Set checkNewMessage[{packetNum}]:");
+                // Trace.WriteLine($"Set checkNewMessage[{packetNum}]:");
                 
             }
             else
             {
                 // 이미 비트가 1인 경우
-                Console.WriteLine($"checkNewMessage[{packetNum}] is already set to 1.");
+                
             }
         }
 
@@ -233,23 +242,17 @@ namespace Student
             // "_"를 기준으로 문자열 분리
             string[] parts = input.Split('_');
 
-            if (parts.Length == 2)
-            {
-                // 앞부분과 뒷부분에서 숫자만 추출
-                string leadingNumber = Regex.Replace(parts[0], @"\D", ""); // 숫자가 아닌 문자 제거
-                string trailingNumber = Regex.Replace(parts[1], @"\D", ""); // 숫자가 아닌 문자 제거
+            // 앞부분과 뒷부분에서 숫자만 추출
+            string leadingNumber = Regex.Replace(parts[0], @"\D", ""); // 숫자가 아닌 문자 제거
+            string trailingNumber = Regex.Replace(parts[1], @"\D", ""); // 숫자가 아닌 문자 제거
 
-                // getLeading이 true면 앞 숫자 반환, false면 뒤 숫자 반환
-                string numberString = getLeading ? leadingNumber : trailingNumber;
+            //Trace.WriteLine($"I got {leadingNumber}_{trailingNumber}");
 
-                // 빈 문자열 확인 후 int로 변환
-                return string.IsNullOrEmpty(numberString) ? 0 : int.Parse(numberString);
-            }
-            else
-            {
-                // 형식이 맞지 않으면 0 반환
-                return 0;
-            }
+            // getLeading이 true면 앞 숫자 반환, false면 뒤 숫자 반환
+            string numberString = getLeading ? leadingNumber : trailingNumber;
+
+            // 빈 문자열 확인 후 int로 변환
+            return string.IsNullOrEmpty(numberString) ? 0 : int.Parse(numberString);
         }
 
         // KAU
@@ -275,7 +278,7 @@ namespace Student
 
 
             //byte 배열 초기화(무시해야할 비트들을 모두 1로)
-            for (int i = array_index * 8 - ignored_bits + 1; i <= array_index * 8; i++)
+            for (int i = ARRAY_INDEX * 8 - IGNORED_BITS + 1; i <= ARRAY_INDEX * 8; i++)
             {
                 SetNewMsgBit(i);
             }
@@ -296,7 +299,7 @@ namespace Student
                         //TCP Ack 전송
                         SendTCPMessage("");
 
-                        Console.WriteLine("All packets received.");
+                        Trace.WriteLine("All packets received.");
                         
 
                         // checkNewMessage 배열 초기화
@@ -304,7 +307,7 @@ namespace Student
 
                         // 다음 메시지 준비
                         receivedMessageNum++;
-                        Console.WriteLine($"receivedMessageNum: {receivedMessageNum}");
+                        Trace.WriteLine($"receivedMessageNum: {receivedMessageNum}");
                     }
 
                     // 배열 복사

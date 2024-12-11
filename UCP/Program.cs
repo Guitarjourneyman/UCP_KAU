@@ -29,35 +29,41 @@ namespace Student
             // 이벤트 핸들러 등록
             studentManager.OnSendMessage += (message) =>
             {
-                Console.WriteLine($"{receivedNum}[SEND] Message: {message}");
+                string timestamp = " [StudentTime]: " + $"[{DateTime.Now:HH:mm:ss.fff}]";
+                Console.WriteLine($"[SEND][{sendNum}] Message: {message} {timestamp}");
                 receivedNum++;
             };
-
+            
             studentManager.OnReceiveMessage += (message) =>
             {
-                Console.WriteLine($"{sendNum}[RECEIVE] Message: {message}");
+                string timestamp = " [StudentTime]: " + $"[{DateTime.Now:HH:mm:ss.fff}]";
+                Console.WriteLine($"[RECEIVE][{sendNum}] Message: {message} {timestamp}");
                 sendNum++;
             };
 
 
+            // UDP Listening Start
+            studentManager.Start();
 
         sendStart:
             Console.Write("Client 시작: ");
             string answer = (Console.ReadLine());
             if (answer.Equals("y") || answer.Equals("Y"))
             {
-                // UDP Listening Start
-                studentManager.Start();
+               
 
                 Thread UDPCheck = new Thread(new ThreadStart(PeriodicUDP_PacketCheck));
                 UDPCheck.Start();
 
-                goto sendStart; 
+                Console.WriteLine("UDP Receiving");
+                goto sendStart;
+                 
             }
             else if (answer.Equals("stop"))
             {
                 // 서버 종료
                 studentManager.Stop();
+                Console.WriteLine("Student stopped.");
                 goto sendStart;
             }
             else
@@ -65,13 +71,13 @@ namespace Student
                 goto sendStart;
             }
 
-            Console.WriteLine("Student stopped.");
+            
         }
 
         // UDP로 받은 메시지의 패킷이 모두 다 왔는 지 시간마다 확인
         private static void PeriodicUDP_PacketCheck()
         {
-            while (true && )
+            while (true)
             {
                 studentManager.UDP_PacketCheck();
                 Thread.Sleep(100);
