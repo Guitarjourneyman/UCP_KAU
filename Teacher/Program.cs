@@ -47,7 +47,7 @@ namespace Teacher
 
 
             sendStart:
-                Console.Write("UDP Broadcast 시작: ");
+                Console.WriteLine("UDP Broadcast 시작: ");
                 string answer = (Console.ReadLine());
             if (answer.Equals("y") || answer.Equals("Y"))
             {
@@ -60,7 +60,7 @@ namespace Teacher
             {
                 // 메세지 송신 중단 후 Thread 종료
                 startThread = false;
-
+                goto sendStart;
             }
             else if (answer.Equals("exit")) {
                 // 메세지 송신 중단 후 Thread 종료
@@ -84,20 +84,22 @@ namespace Teacher
 
             StringBuilder messageBuilder = new StringBuilder(MESSAGE_SIZE);
             string timestamp = " TeacherTime: " + $"[{DateTime.Now:HH:mm:ss.fff}]";
+            messageBuilder.Append("AAAAA");
+            messageBuilder.Append(timestamp);
             int len = timestamp.Length;
 
-            for (int i = 0; i < MESSAGE_SIZE - len; i++)
+            for (int i = 0; i < (MESSAGE_SIZE - 5 - len); i++)
             {
                 messageBuilder.Append('A');
             }
 
-            string message = messageBuilder.ToString() + timestamp; // 전체 메시지 생성
+            string message = messageBuilder.ToString();// + timestamp; // 전체 메시지 생성
             while (startThread)
             {
 
                 // 업데이트 예정
                 teacherManager.Send(message);
-                Thread.Sleep(1000); // 50ms 대기
+                Thread.Sleep(3000); // 50ms 대기
             }
         }
 

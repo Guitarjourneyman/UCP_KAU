@@ -40,7 +40,8 @@ namespace Teacher
 
         // KAU
         public int messageNumber = 1;
-
+        // 업데이트 예정: Parameter로 수정 main에서 const로 수정
+        private int maxMessageSize = Program.MESSAGE_SIZE;
 
         public UDPer_Kau()
         {
@@ -175,31 +176,29 @@ namespace Teacher
                 if (bytesRead > 0)
                 {
 
-                    //버퍼 데이터 가져오기
-                    byte[] buffer = ((byte[])ar.AsyncState);
+                    //버퍼 데이터 가져오기                    
+                    byte[] buffer = (byte[])ar.AsyncState;
+                    string receivedMessage = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                    // **수신 메시지 출력**
+                    string receviedTimestamp = " [Teacher]: " + $"[{DateTime.Now:HH:mm:ss.fff}]";
+                    OnReceiveMessage?.Invoke(receivedMessage + receviedTimestamp);
 
-                    using (BinaryReader reader = new BinaryReader(new MemoryStream(buffer, 0, bytesRead), Encoding.UTF8))
+                    // "<TRUE>" 추출 및 확인
+                    if (receivedMessage.Contains("<TRUE>"))
                     {
-                        /*
-                        //  // **1바이트 수신 (true/false 변환)**
-                        byte receivedBit = reader.ReadByte(); // 1바이트 수신
-                        bool receivedBoolean = (receivedBit == 1); // 1 -> true, 0 -> false로 변환
-                        */
-                        // **UTF 메시지 수신**
-                        string receivedMessage = reader.ReadString();
-                        // "<TRUE>" 추출 및 확인
-                        if (receivedMessage.Contains("<TRUE>"))
-                        {
-                            clientReceivedTimestamps[client] = "TRUE";
-                        }
-                        //KAU: 수신 시간 추가
-                        // **수신 메시지 출력**
-                        string receviedTimestamp = "[Teacher]: "+$"[{DateTime.Now:HH:mm:ss.fff}]";
-                        OnReceiveMessage?.Invoke(receivedMessage + receviedTimestamp);
+                        clientReceivedTimestamps[client] = "<TRUE>";
                     }
-
+                    // 모든 클라이언트가 TRUE인지 확인
+                    if (AllClientReceiveData("<TRUE>")) { 
+                        messageNumber++;
+                        Trace.WriteLine($"MessageNumber{messageNumber} is up");
+                        // 메시지 번호 증가 후 초기화
+                        ResetClientReceivedTimestamps();
+                    }
                     // 다음 데이터를 비동기로 읽기
                     StartReading(client);
+
+
                 }
                 else { 
                     DisconnectClient(client);
@@ -285,8 +284,7 @@ namespace Teacher
         // UDP Send
         
         public void Send(string message) {
-            // 업데이트 예정: Parameter로 수정 main에서 const로 수정
-            int MAX_MESSAGE_SIZE = Program.MESSAGE_SIZE;
+            
 
             if (string.IsNullOrEmpty(BROADCAST_ADDRESS)) {
                 Trace.WriteLine("Broadcast address is not set.");
@@ -301,14 +299,14 @@ namespace Teacher
                     
                     byte[] bytes = Encoding.UTF8.GetBytes(message);
 
-                    if (bytes.Length > Program.MESSAGE_SIZE)
+                    if (bytes.Length > maxMessageSize)
                     {
-                        Trace.WriteLine($"Message size ({bytes.Length} bytes) exceeds the maximum limit of {Program.MESSAGE_SIZE} bytes. Truncating the message.");
+                        Trace.WriteLine($"Message size ({bytes.Length} bytes) exceeds the maximum limit of {maxMessageSize} bytes. Truncating the message.");
                         return;
                     }
 
                     // KAU : 메세지를 Packet으로 Chunk해서 Send -> 필요하면 메소드화 인자를 여러개 넘겨줘야해서 따로 만들지 않음
-                    else if (bytes.Length > 1500 && bytes.Length <= Program.MESSAGE_SIZE) {
+                    else if (bytes.Length > 1500 && bytes.Length <= maxMessageSize) {
 
                         int offset = 0;
                         int packetCount = 0; // 패킷 번호 카운터
@@ -346,7 +344,7 @@ namespace Teacher
                                 string truncatedMessage = Encoding.UTF8.GetString(buffer, 0, Math.Min(buffer.Length, 30));
 
 
-                                OnSendMessage(truncatedMessage);
+                                // OnSendMessage(truncatedMessage);
                                 Trace.WriteLine("Message sent successfully.");
                             }
                             

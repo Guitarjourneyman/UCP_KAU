@@ -12,6 +12,7 @@ namespace Student
         public static bool startThread = true;
         private static int receivedNum = 1;
         private static int sendNum = 1;
+        public const int MESSAGE_LENGTH = 60;
         // UDPer_Kau 클래스 인스턴스 생성
         static UDPer_client_Kau studentManager = null;
 
@@ -44,9 +45,9 @@ namespace Student
 
             // UDP Listening Start
             studentManager.Start();
-
+            Console.WriteLine("Server started. Type 'exit' to quit.");
         sendStart:
-            Console.Write("Client 시작: ");
+            Console.WriteLine("Client 시작: ");
             string answer = (Console.ReadLine());
             if (answer.Equals("y") || answer.Equals("Y"))
             {
@@ -61,13 +62,14 @@ namespace Student
             }
             else if (answer.Equals("stop"))
             {
-                // 서버 종료
-                studentManager.Stop();
+                // 업데이트 예정: 미완성
                 Console.WriteLine("Student stopped.");
                 goto sendStart;
             }
-            else
+            else if(answer.Equals("exit"))
             {
+                // 서버 종료
+                studentManager.Stop();
                 goto sendStart;
             }
 
@@ -80,7 +82,7 @@ namespace Student
             while (true)
             {
                 studentManager.UDP_PacketCheck();
-                Thread.Sleep(100);
+                Thread.Sleep(1000);
             }
 
         }

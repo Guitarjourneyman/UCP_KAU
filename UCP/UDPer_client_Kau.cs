@@ -10,6 +10,7 @@ using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 using System.Data;
 using System.Security.Cryptography;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Student
 {
@@ -39,7 +40,7 @@ namespace Student
         private const bool MESSAGE_NUM = true;
         private const bool PACKET_NUM = false;
         public static int receivedMessageNum = 1;
-       
+        private static int messageLength = Program.MESSAGE_LENGTH;
         public UDPer_client_Kau()
         {
             try
@@ -144,15 +145,10 @@ namespace Student
                         if //(localIPAddress != null && !ip.Address.Equals(localIPAddress))
                             (localIPAddress != null)
                         {
-                            // 메시지의 앞부분 30글자만 잘라서 표시
-                            string truncatedMessage = message.Length > 30
-                                    ? message.Substring(0, 30)
+                            // 메시지의 앞부분 messageLength 글자만 잘라서 표시
+                            string truncatedMessage = message.Length > messageLength
+                                    ? message.Substring(0, messageLength)
                                     : message;
-                            
-                            
-                            
-                            // 메시지 출력
-                            OnReceiveMessage(truncatedMessage);
 
                             // 메시지 번호와 패킷 번호 추출
                             int message_num = ExtractNumberPart(truncatedMessage, MESSAGE_NUM);
@@ -161,11 +157,15 @@ namespace Student
                             // 맞는 메시지 번호가 오면
                             if (receivedMessageNum == message_num)
                             {
+                                if (!checkNewMessage.SequenceEqual(lastMessage)) {
+                                    // 메시지 출력
+                                    // KAU: 변화가 있을 때만 Console로 출력
+                                    OnReceiveMessage(truncatedMessage);
+                                }
 
                                 // 해당 메세지 번호의 받은 패킷 번호에 맞는 배열의 index를 set
                                 SetNewMsgBit(packet_num);
-                                // 비트맵 출력
-                                // PrintByteArrayAsBinary(checkNewMessage);
+                                
 
                                 // Trace.WriteLine($"Received {message_num} message");
                             }
@@ -239,17 +239,19 @@ namespace Student
         // getLeading이 true면 "_" 기준 앞 숫자 반환, false면 뒤 숫자 반환
         public static int ExtractNumberPart(string input, bool getLeading)
         {
-            // "_"를 기준으로 문자열 분리
-            string[] parts = input.Split('_');
+            // '_' 기준으로 앞의 숫자 추출
+            int underscoreIndex = input.IndexOf('_');
+            string firstNumber = input.Substring(0, underscoreIndex);
 
-            // 앞부분과 뒷부분에서 숫자만 추출
-            string leadingNumber = Regex.Replace(parts[0], @"\D", ""); // 숫자가 아닌 문자 제거
-            string trailingNumber = Regex.Replace(parts[1], @"\D", ""); // 숫자가 아닌 문자 제거
+            // A가 나오기 전까지의 숫자 추출
+            int startIndex = underscoreIndex + 1;
+            int endIndex = input.IndexOf('A', startIndex);
+            string secondNumber = input.Substring(startIndex, endIndex - startIndex);
 
-            //Trace.WriteLine($"I got {leadingNumber}_{trailingNumber}");
+           
 
             // getLeading이 true면 앞 숫자 반환, false면 뒤 숫자 반환
-            string numberString = getLeading ? leadingNumber : trailingNumber;
+            string numberString = getLeading ? firstNumber : secondNumber;
 
             // 빈 문자열 확인 후 int로 변환
             return string.IsNullOrEmpty(numberString) ? 0 : int.Parse(numberString);
@@ -272,10 +274,10 @@ namespace Student
             return true;
         }
 
-       // KAU 
+        // KAU 
         private void InitializeCheckNewMessage()
         {
-
+            Array.Fill(checkNewMessage, (byte)0);
 
             //byte 배열 초기화(무시해야할 비트들을 모두 1로)
             for (int i = ARRAY_INDEX * 8 - IGNORED_BITS + 1; i <= ARRAY_INDEX * 8; i++)
@@ -291,7 +293,9 @@ namespace Student
                 // checkNewMessage 배열에 변화가 있는지 확인
                 if (!checkNewMessage.SequenceEqual(lastMessage))
                 {
-
+                   
+                    // 비트맵 출력
+                    // PrintByteArrayAsBinary(checkNewMessage);
 
                     // 모든 비트가 1인지 확인
                     if (AllBitsOne(checkNewMessage))
