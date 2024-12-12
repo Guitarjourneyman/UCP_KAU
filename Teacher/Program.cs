@@ -11,13 +11,13 @@ namespace Teacher
     {
         //KAU 
         private static bool startThread = true;
-        public const int MESSAGE_SIZE = 61440;
+        public const int MAX_MESSAGE_SIZE = 61440;
         public const int PACKET_SIZE = 1024; // 단위 패킷 크기 (1KB)
         private static int receiveNum = 1;
         private static int sendNum = 1;
 
         // UDPer_Kau 클래스 인스턴스 생성
-       static UDPer_Kau teacherManager = null;
+        static UDPer_Kau teacherManager = null;
 
         static void Main(string[] args)
         {
@@ -46,9 +46,9 @@ namespace Teacher
             Thread sendThread = null;
 
 
-            sendStart:
-                Console.WriteLine("UDP Broadcast 시작: ");
-                string answer = (Console.ReadLine());
+        sendStart:
+            Console.WriteLine("UDP Broadcast 시작: ");
+            string answer = (Console.ReadLine());
             if (answer.Equals("y") || answer.Equals("Y"))
             {
                 // 메시지 송신
@@ -62,7 +62,8 @@ namespace Teacher
                 startThread = false;
                 goto sendStart;
             }
-            else if (answer.Equals("exit")) {
+            else if (answer.Equals("exit"))
+            {
                 // 메세지 송신 중단 후 Thread 종료
                 startThread = false;
 
@@ -82,30 +83,37 @@ namespace Teacher
         {
             // 지정된 크기의 연속된 "A" 문자 생성
 
-            StringBuilder messageBuilder = new StringBuilder(MESSAGE_SIZE);
-            string timestamp = " TeacherTime: " + $"[{DateTime.Now:HH:mm:ss.fff}]";
-            messageBuilder.Append("AAAAA");
-            messageBuilder.Append(timestamp);
-            int len = timestamp.Length;
+            StringBuilder messageBuilder = new StringBuilder(MAX_MESSAGE_SIZE);
 
-            for (int i = 0; i < (MESSAGE_SIZE - 5 - len); i++)
-            {
-                messageBuilder.Append('A');
-            }
 
-            string message = messageBuilder.ToString();// + timestamp; // 전체 메시지 생성
+
+
             while (startThread)
             {
+                messageBuilder.Append("AAAAA");
+                string timestamp = " TeacherTime: " + $"[{DateTime.Now:HH:mm:ss.fff}]";
+
+                messageBuilder.Append(timestamp);
+                int len = timestamp.Length;
+
+                for (int i = 0; i < (MAX_MESSAGE_SIZE - 5 - len); i++)
+                {
+                    messageBuilder.Append('A');
+                }
+                string message = messageBuilder.ToString();// + timestamp; // 전체 메시지 생성
 
                 // 업데이트 예정
                 teacherManager.Send(message);
-                Thread.Sleep(3000); // 50ms 대기
+
+                messageBuilder.Clear();
+
+                Thread.Sleep(50); // 50ms 대기
             }
         }
 
 
     }
 
-    
+
 
 }

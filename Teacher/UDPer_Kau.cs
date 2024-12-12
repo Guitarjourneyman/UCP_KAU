@@ -34,47 +34,56 @@ namespace Teacher
         //IAsyncResult를 통해 작업 상태 및 결과 전달
         IAsyncResult ar_ = null;
 
-        
+
         private string BROADCAST_ADDRESS = null;
         private IPAddress localIPAddress = null;
 
-        // KAU
+        // KAU: 테스트용 변수
         public int messageNumber = 1;
-        // 업데이트 예정: Parameter로 수정 main에서 const로 수정
-        private int maxMessageSize = Program.MESSAGE_SIZE;
+        // KAU : 외부로부터 받아서 선언함
+        private int maxMessageSize = Program.MAX_MESSAGE_SIZE;
+        private int packetSize = Program.PACKET_SIZE;
 
         public UDPer_Kau()
         {
-            try {
+            try
+            {
                 localIPAddress = GetLocalIPAddress();
 
             }
-            catch(Exception ex) {
+            catch (Exception ex)
+            {
                 Trace.WriteLine($"Error getting local IP Address: {ex.Message}");
             }
         }
 
-        public void SetBroadcastAddress(string broadcastAddress) {
+        public void SetBroadcastAddress(string broadcastAddress)
+        {
             BROADCAST_ADDRESS = broadcastAddress;
         }
 
-        public void Start() {
+        public void Start()
+        {
 
-            if (tcpListener != null) {
+            if (tcpListener != null)
+            {
                 throw new Exception("Already started stop first");
             }
 
-            try { 
+            try
+            {
                 tcpListener = new TcpListener(IPAddress.Any, PORT_NUMBER);
                 tcpListener.Start();
                 Trace.WriteLine("TCP listener started");
                 StartListening();
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 Trace.WriteLine($"Error starting TCP listener: {ex.Message}");
             }
         }
-        public void Stop() {
+        public void Stop()
+        {
             // udp instance stop
             try
             {
@@ -129,11 +138,13 @@ namespace Teacher
 
         public void StartListening()
         {
-            try {
+            try
+            {
                 tcpListener.BeginAcceptTcpClient(AcceptTcpClient, null);
                 Trace.WriteLine("Start Listening for TCP connections");
             }
-            catch(Exception ex){
+            catch (Exception ex)
+            {
                 Trace.WriteLine($"Error starting listening: {ex.Message}");
             }
         }
@@ -152,13 +163,15 @@ namespace Teacher
                 // 작업을 완료했으면, 다시 연결 요청 대기 상태
                 StartListening();
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 Trace.WriteLine($"Error accepting client: {ex.Message}");
             }
         }
-
+        // KAU
         // TCP Ack Receive
-        private void StartReading(TcpClient client) {
+        private void StartReading(TcpClient client)
+        {
             NetworkStream stream = clientStreams[client];
             byte[] buffer = new byte[1024];
             stream.BeginRead(buffer, 0, buffer.Length, ar => ReadCallback(ar, client), buffer);
@@ -166,13 +179,14 @@ namespace Teacher
 
         private void ReadCallback(IAsyncResult ar, TcpClient client)
         {
-            try {
+            try
+            {
                 NetworkStream stream = clientStreams[client];
                 int bytesRead = stream.EndRead(ar);
-                // KAU: true/false로만 읽도록 수정
+
 
                 // 네트워크 스트림 생성
-           
+
                 if (bytesRead > 0)
                 {
 
@@ -189,7 +203,8 @@ namespace Teacher
                         clientReceivedTimestamps[client] = "<TRUE>";
                     }
                     // 모든 클라이언트가 TRUE인지 확인
-                    if (AllClientReceiveData("<TRUE>")) { 
+                    if (AllClientReceiveData("<TRUE>"))
+                    {
                         messageNumber++;
                         Trace.WriteLine($"MessageNumber{messageNumber} is up");
                         // 메시지 번호 증가 후 초기화
@@ -200,18 +215,21 @@ namespace Teacher
 
 
                 }
-                else { 
+                else
+                {
                     DisconnectClient(client);
                 }
-                
+
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 Trace.WriteLine($"Error reading data: {ex.Message}");
                 DisconnectClient(client);
             }
         }
 
-        private void DisconnectClient(TcpClient client) {
+        private void DisconnectClient(TcpClient client)
+        {
             try
             {
                 if (clientStreams.TryGetValue(client, out NetworkStream stream))
@@ -235,26 +253,32 @@ namespace Teacher
             }
         }
 
-        public void ResetClientReceivedTimestamps() {
+        public void ResetClientReceivedTimestamps()
+        {
 
-            foreach (var client in clients) {
+            foreach (var client in clients)
+            {
                 clientReceivedTimestamps[client] = null;
             }
         }
 
-        // KAU 업데이트 예정: 메시지를 받은 다음 처리 방식
-        public bool AllClientReceiveData(string timestamp) {
+
+        public bool AllClientReceiveData(string timestamp)
+        {
 
             foreach (var receivedTimestamp in clientReceivedTimestamps.Values)
             {
-                if (receivedTimestamp != timestamp) {
+                if (receivedTimestamp != timestamp)
+                {
                     return false;
                 }
             }
-            return true; }
+            return true;
+        }
 
         // UDP Receive
-        public void Receive(IAsyncResult ar) {
+        public void Receive(IAsyncResult ar)
+        {
             try
             {
                 IPEndPoint ip = new IPEndPoint(IPAddress.Any, PORT_NUMBER);
@@ -271,7 +295,8 @@ namespace Teacher
                     }
                 }
             }
-            catch (SocketException se) {
+            catch (SocketException se)
+            {
                 Trace.WriteLine($"SocketException: {se.Message}");
             }
             catch (Exception ex)
@@ -280,23 +305,28 @@ namespace Teacher
             }
         }
 
-        
+        // KAU: 테스트를 위해 MAX_MESSAGE_SIZE, PACKET_SIZE 외부로부터 받아서 전역변수로 선언해놨으나
+        // KAU: 메인 프로그램과 연동시 Parameter화 필요함
         // UDP Send
-        
-        public void Send(string message) {
-            
 
-            if (string.IsNullOrEmpty(BROADCAST_ADDRESS)) {
+        public void Send(string message)
+        {
+
+
+            if (string.IsNullOrEmpty(BROADCAST_ADDRESS))
+            {
                 Trace.WriteLine("Broadcast address is not set.");
                 return;
             }
 
-            try {
-                using (UdpClient client = new UdpClient()) { 
+            try
+            {
+                using (UdpClient client = new UdpClient())
+                {
                     IPEndPoint ip = new IPEndPoint(IPAddress.Parse(BROADCAST_ADDRESS), PORT_NUMBER);
                     client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                     //KAU
-                    
+
                     byte[] bytes = Encoding.UTF8.GetBytes(message);
 
                     if (bytes.Length > maxMessageSize)
@@ -306,7 +336,8 @@ namespace Teacher
                     }
 
                     // KAU : 메세지를 Packet으로 Chunk해서 Send -> 필요하면 메소드화 인자를 여러개 넘겨줘야해서 따로 만들지 않음
-                    else if (bytes.Length > 1500 && bytes.Length <= maxMessageSize) {
+                    else if (bytes.Length > packetSize && bytes.Length <= maxMessageSize)
+                    {
 
                         int offset = 0;
                         int packetCount = 0; // 패킷 번호 카운터
@@ -347,23 +378,24 @@ namespace Teacher
                                 // OnSendMessage(truncatedMessage);
                                 Trace.WriteLine("Message sent successfully.");
                             }
-                            
+
                         }
 
                     }
 
-                   
-                    
-                    
 
-                }    
+
+
+
+                }
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 Trace.WriteLine($"Error sending message: {ex.Message}");
-            }            
+            }
         }
 
-        
+
         /*Handler를 Main에서 호출하여 Send/Receive 사용*/
         public delegate void SendMessageHandler(string message);
         public event SendMessageHandler OnSendMessage;
