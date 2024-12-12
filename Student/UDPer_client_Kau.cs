@@ -32,7 +32,7 @@ namespace Student
         private NetworkStream stream;
 
         // KAU
-        public int TOTAL_PACKETS; // 전체 패킷 수 (필요에 맞게 수정)
+        public int packentNum = Program.TOTAL_PACKETS; // 전체 패킷 수 (필요에 맞게 수정)
         private static int ARRAY_INDEX;
         private static int IGNORED_BITS;
         private static byte[] checkNewMessage;
@@ -76,8 +76,8 @@ namespace Student
                 udp.Client.Bind(localEp);
                 
                 // KAU: 메세지 패킷 사이즈 계산
-                ARRAY_INDEX = CalculateBits(TOTAL_PACKETS, 0);
-                IGNORED_BITS = CalculateBits(TOTAL_PACKETS, 1);
+                ARRAY_INDEX = CalculateBits(packentNum, 0);
+                IGNORED_BITS = CalculateBits(packentNum, 1);
                 // 패킷 수에 맞는 배열 생성
                 checkNewMessage = new byte[ARRAY_INDEX];
                 InitializeCheckNewMessage();
@@ -158,11 +158,8 @@ namespace Student
                             // 맞는 메시지 번호가 오면
                             if (receivedMessageNum == message_num)
                             {
-                                if (!checkNewMessage.SequenceEqual(lastMessage)) {
-                                    // 메시지 출력
-                                    // KAU: 변화가 있을 때만 Console로 출력
-                                    OnReceiveMessage(truncatedMessage);
-                                }
+                                
+                                OnReceiveMessage(truncatedMessage);
 
                                 // 해당 메세지 번호의 받은 패킷 번호에 맞는 배열의 index를 set
                                 SetNewMsgBit(packet_num);

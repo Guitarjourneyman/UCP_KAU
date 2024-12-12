@@ -13,6 +13,10 @@ namespace Student
         private static int receivedNum = 1;
         private static int sendNum = 1;
         public const int MESSAGE_LENGTH = 60;
+        // UDP 패킷 수 설정 
+        // 전체 패킷 수 (필요에 맞게 수정)
+        public const int TOTAL_PACKETS = 61; 
+
         // UDPer_Kau 클래스 인스턴스 생성
         static UDPer_client_Kau studentManager = null;
 
@@ -21,8 +25,8 @@ namespace Student
             // UDPer_Kau 클래스 인스턴스 생성
             studentManager = new UDPer_client_Kau();
 
-            // UDP 패킷 수 설정
-            studentManager.TOTAL_PACKETS = 61;
+            
+            
 
             // 브로드캐스트 주소 설정 (필요에 따라 변경)
             studentManager.SetBroadcastAddress("192.168.0.255");

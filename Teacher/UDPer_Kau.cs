@@ -16,6 +16,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.ComponentModel.Design;
 
 namespace Teacher
 {
@@ -159,7 +160,10 @@ namespace Teacher
                 clientStreams[client] = stream;
                 Trace.WriteLine("Client connected");
 
+                // KAU 
+                clientReceivedTimestamps[client] = null;
                 StartReading(client);
+
                 // 작업을 완료했으면, 다시 연결 요청 대기 상태
                 StartListening();
             }
@@ -195,21 +199,15 @@ namespace Teacher
                     string receivedMessage = Encoding.UTF8.GetString(buffer, 0, bytesRead);
                     // **수신 메시지 출력**
                     string receviedTimestamp = " [Teacher]: " + $"[{DateTime.Now:HH:mm:ss.fff}]";
-                    OnReceiveMessage?.Invoke(receivedMessage + receviedTimestamp);
+                    OnReceiveMessage?.Invoke("["+ messageNumber +"]"+ receivedMessage + receviedTimestamp);
 
                     // "<TRUE>" 추출 및 확인
                     if (receivedMessage.Contains("<TRUE>"))
                     {
                         clientReceivedTimestamps[client] = "<TRUE>";
+                        Console.WriteLine($"Client IP: {client.Client.RemoteEndPoint} <TRUE>");
                     }
-                    // 모든 클라이언트가 TRUE인지 확인
-                    if (AllClientReceiveData("<TRUE>"))
-                    {
-                        messageNumber++;
-                        Trace.WriteLine($"MessageNumber{messageNumber} is up");
-                        // 메시지 번호 증가 후 초기화
-                        ResetClientReceivedTimestamps();
-                    }
+                    
                     // 다음 데이터를 비동기로 읽기
                     StartReading(client);
 
@@ -268,6 +266,7 @@ namespace Teacher
 
             foreach (var receivedTimestamp in clientReceivedTimestamps.Values)
             {
+                // Console.WriteLine($"receivedTimestamp: {receivedTimestamp}");
                 if (receivedTimestamp != timestamp)
                 {
                     return false;
@@ -362,8 +361,7 @@ namespace Teacher
                             offset += length;
                             packetCount++; // 패킷 번호 증가
 
-                            // 디버그 메시지 출력
-                            Trace.WriteLine($"{packetCount}번째 패킷 전송 완료");
+                            
                             // KAU
                             if (ret != 0 && ret != buffer.Length)
                             {
@@ -374,12 +372,21 @@ namespace Teacher
                                 // 메시지의 앞부분 30글자만 잘라서 표시
                                 string truncatedMessage = Encoding.UTF8.GetString(buffer, 0, Math.Min(buffer.Length, 30));
 
-
+                                // 디버그 메시지 출력
+                                // Trace.WriteLine($"[{Program.countMsg}] {messageNumber}번째 메시지 전송 완료");
                                 // OnSendMessage(truncatedMessage);
-                                Trace.WriteLine("Message sent successfully.");
+                                // Trace.WriteLine("Message sent successfully.");
                             }
 
                         }
+                        
+
+
+                    }
+                    else
+                    {
+                        client.Send(bytes, bytes.Length, ip);
+                        Trace.WriteLine($"Message size ({bytes.Length} bytes. {message}.");
 
                     }
 

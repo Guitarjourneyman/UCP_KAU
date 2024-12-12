@@ -10,12 +10,13 @@ namespace Teacher
     class Program
     {
         //KAU 
-        private static bool startThread = true;
+        private static bool startThread = false;
         public const int MAX_MESSAGE_SIZE = 61440;
         public const int PACKET_SIZE = 1024; // 단위 패킷 크기 (1KB)
         private static int receiveNum = 1;
         private static int sendNum = 1;
-
+        private static bool startMsg = false;
+        public static int countMsg = 1;
         // UDPer_Kau 클래스 인스턴스 생성
         static UDPer_Kau teacherManager = null;
 
@@ -30,7 +31,7 @@ namespace Teacher
             // 이벤트 핸들러 등록
             teacherManager.OnSendMessage += (message) =>
             {
-                Console.WriteLine($"[SEND][{sendNum}] Message: {message}");
+                Console.WriteLine($"[SEND] Message: {message}");
                 sendNum++;
             };
 
@@ -45,15 +46,17 @@ namespace Teacher
             Console.WriteLine("Server started. Type 'exit' to quit.");
             Thread sendThread = null;
 
+            // 메시지 송신
+            sendThread = new Thread(new ThreadStart(SendPeriodicMessages));
 
         sendStart:
             Console.WriteLine("UDP Broadcast 시작: ");
             string answer = (Console.ReadLine());
             if (answer.Equals("y") || answer.Equals("Y"))
             {
-                // 메시지 송신
-                sendThread = new Thread(new ThreadStart(SendPeriodicMessages));
-                sendThread.Start();
+                // 실질적 시작
+                startMsg = true;
+                startThread = true;
                 goto sendStart;
             }
             else if (answer.Equals("stop"))
@@ -67,6 +70,13 @@ namespace Teacher
                 // 메세지 송신 중단 후 Thread 종료
                 startThread = false;
 
+            }
+            else if (answer.Equals("start"))
+            {
+                
+                sendThread.Start();
+
+                goto sendStart;
             }
             else
             {
@@ -86,10 +96,26 @@ namespace Teacher
             StringBuilder messageBuilder = new StringBuilder(MAX_MESSAGE_SIZE);
 
 
+            while (!startMsg) {
+                // 업데이트 예정
+                teacherManager.Send(" Request Server Connection ");
+                Thread.Sleep(3000);
+            }
 
-
-            while (startThread)
+            while (startThread & startMsg)
             {
+                // 모든 클라이언트가 TRUE인지 확인
+                if (teacherManager.AllClientReceiveData("<TRUE>"))
+                {
+                    // 디버그 메시지 출력
+                    Trace.WriteLine($"[{Program.countMsg}] {teacherManager.messageNumber} Ack 수신 완료");
+                    // Trace.WriteLine($"MessageNumber{teacherManager.messageNumber} is up");
+                    // 초기화 후 메시지 번호 증가
+                    teacherManager.ResetClientReceivedTimestamps();
+                    teacherManager.messageNumber++;
+                    countMsg = 1;
+                }
+
                 messageBuilder.Append("AAAAA");
                 string timestamp = " TeacherTime: " + $"[{DateTime.Now:HH:mm:ss.fff}]";
 
@@ -104,10 +130,11 @@ namespace Teacher
 
                 // 업데이트 예정
                 teacherManager.Send(message);
-
+                countMsg++;
+                
                 messageBuilder.Clear();
 
-                Thread.Sleep(50); // 50ms 대기
+                Thread.Sleep(100); // 100ms 대기
             }
         }
 
