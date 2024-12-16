@@ -35,8 +35,8 @@ namespace Student
         public int packentNum = Program.TOTAL_PACKETS; // 전체 패킷 수 (필요에 맞게 수정)
         private static int ARRAY_INDEX;
         private static int IGNORED_BITS;
-        private static byte[] checkNewMessage;
-        private static byte[] lastMessage; // 이전 배열(배열에 변화가 생겼을 때만 ack 전송)
+        private static byte[] checkMessageChunk;
+        private static byte[] lastMessageChunk; // 이전 배열(배열에 변화가 생겼을 때만 ack 전송)
         private const bool MESSAGE_NUM = true;
         private const bool PACKET_NUM = false;
         public static int receivedMessageNum = 1;
@@ -79,11 +79,11 @@ namespace Student
                 ARRAY_INDEX = CalculateBits(packentNum, 0);
                 IGNORED_BITS = CalculateBits(packentNum, 1);
                 // 패킷 수에 맞는 배열 생성
-                checkNewMessage = new byte[ARRAY_INDEX];
+                checkMessageChunk = new byte[ARRAY_INDEX];
                 InitializeCheckNewMessage();
 
                 // lastMessage에 저장
-                lastMessage = (byte[])checkNewMessage.Clone();
+                lastMessageChunk = (byte[])checkMessageChunk.Clone();
 
                 StartListening();
 
@@ -218,11 +218,11 @@ namespace Student
             int bitIndex = (packetNum - 1) % 8;  // 해당 바이트 내의 비트 위치
 
             // 해당 바이트 내에서 bitIndex 위치의 비트가 0인지 1인지 확인
-            if ((checkNewMessage[byteIndex] & (1 << bitIndex)) == 0)
+            if ((checkMessageChunk[byteIndex] & (1 << bitIndex)) == 0)
             {
                 // 비트가 0이라면 1로 설정
-                checkNewMessage[byteIndex] |= (byte)(1 << bitIndex);
-                // Trace.WriteLine($"Set checkNewMessage[{packetNum}]:");
+                checkMessageChunk[byteIndex] |= (byte)(1 << bitIndex);
+                // Trace.WriteLine($"Set checkMessageChunk[{packetNum}]:");
                 
             }
             else
@@ -272,10 +272,10 @@ namespace Student
             return true;
         }
 
-        // KAU 
+        // KAU: 바이트 배열 초기화
         private void InitializeCheckNewMessage()
         {
-            Array.Fill(checkNewMessage, (byte)0);
+            Array.Fill(checkMessageChunk, (byte)0);
 
             //byte 배열 초기화(무시해야할 비트들을 모두 1로)
             for (int i = ARRAY_INDEX * 8 - IGNORED_BITS + 1; i <= ARRAY_INDEX * 8; i++)
@@ -288,15 +288,15 @@ namespace Student
         public void UDP_PacketCheck() {
             try
             {
-                // checkNewMessage 배열에 변화가 있는지 확인
-                if (!checkNewMessage.SequenceEqual(lastMessage))
+                // checkMessageChunk 배열에 변화가 있는지 확인
+                if (!checkMessageChunk.SequenceEqual(lastMessageChunk))
                 {
                    
                     // 비트맵 출력
-                    // PrintByteArrayAsBinary(checkNewMessage);
+                    // PrintByteArrayAsBinary(checkMessageChunk);
 
                     // 모든 비트가 1인지 확인
-                    if (AllBitsOne(checkNewMessage))
+                    if (AllBitsOne(checkMessageChunk))
                     {
                         //TCP Ack 전송
                         SendTCPMessage("");
@@ -304,7 +304,7 @@ namespace Student
                         Trace.WriteLine("All packets received.");
                         
 
-                        // checkNewMessage 배열 초기화
+                        // checkMessageChunk 배열 초기화
                         InitializeCheckNewMessage();
 
                         // 다음 메시지 준비
@@ -313,7 +313,7 @@ namespace Student
                     }
 
                     // 배열 복사
-                    lastMessage = (byte[])checkNewMessage.Clone();
+                    lastMessageChunk = (byte[])checkMessageChunk.Clone();
                 }
             }
             catch (Exception e) {
@@ -366,13 +366,14 @@ namespace Student
             }
         }
 
+        // KAU
         //TCP Ack Send
         public void SendTCPMessage(string message) {
             try
             {
                 if (client != null && stream != null && client.Connected)
                 {
-                    //KAU Ack 보내는 로직 추가
+                    //KAU : Ack 보내는 로직 추가
                     KauLogic.SendMessageTcpAllTrue(stream);
 
                     Trace.WriteLine($"TCP message sent to server .");
@@ -407,7 +408,7 @@ namespace Student
 
         private void Reconnect() {
 
-            // KAU: 연결을 끊고 나서 재연결을 시도하게 됨
+            // 연결을 끊고 나서 재연결을 시도하게 됨
 
             Disconnect();
 

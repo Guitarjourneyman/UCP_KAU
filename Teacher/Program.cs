@@ -134,7 +134,7 @@ namespace Teacher
                 
                 messageBuilder.Clear();
 
-                Thread.Sleep(100); // 100ms 대기
+                Thread.Sleep(50); // 50ms 대기
             }
         }
 

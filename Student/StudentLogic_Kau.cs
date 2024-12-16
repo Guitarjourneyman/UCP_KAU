@@ -8,6 +8,11 @@ namespace Student
 {
     class KauLogic
     {
+        /*
+         
+            다양한 Ack형태를 보낼 것을 대비하여 클래스 따로 작성 
+
+         */
 
         public static void SendMessageTcpAllTrue(Stream stream) 
         {

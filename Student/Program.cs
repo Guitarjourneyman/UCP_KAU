@@ -36,14 +36,15 @@ namespace Student
             {
                 string timestamp = " [StudentTime]: " + $"[{DateTime.Now:HH:mm:ss.fff}]";
                 Console.WriteLine($"[SEND][{sendNum}] Message: {message} {timestamp}");
-                receivedNum++;
+                sendNum++;
             };
             
             studentManager.OnReceiveMessage += (message) =>
             {
                 string timestamp = " [StudentTime]: " + $"[{DateTime.Now:HH:mm:ss.fff}]";
-                Console.WriteLine($"[RECEIVE][{sendNum}] Message: {message} {timestamp}");
-                sendNum++;
+                Console.WriteLine($"[RECEIVE][{receivedNum}] Message: {message} {timestamp}");
+                
+                receivedNum++;
             };
 
 

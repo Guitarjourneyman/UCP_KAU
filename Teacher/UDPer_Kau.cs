@@ -160,8 +160,9 @@ namespace Teacher
                 clientStreams[client] = stream;
                 Trace.WriteLine("Client connected");
 
-                // KAU 
+                // KAU: Value값이 없는 것을 방지하기 위해 null 값을 추가함
                 clientReceivedTimestamps[client] = null;
+
                 StartReading(client);
 
                 // 작업을 완료했으면, 다시 연결 요청 대기 상태
