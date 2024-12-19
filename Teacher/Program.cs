@@ -11,6 +11,7 @@ namespace Teacher
     {
         //KAU 
         private static bool startThread = false;
+        // 61440 1024
         public const int MAX_MESSAGE_SIZE = 61440;
         public const int PACKET_SIZE = 1024; // 단위 패킷 크기 (1KB)
         private static int receiveNum = 1;
@@ -99,7 +100,7 @@ namespace Teacher
             while (!startMsg) {
                 // 업데이트 예정
                 teacherManager.Send(" Request Server Connection ");
-                Thread.Sleep(3000);
+                Thread.Sleep(500);
             }
 
             while (startThread & startMsg)
@@ -134,7 +135,7 @@ namespace Teacher
                 
                 messageBuilder.Clear();
 
-                Thread.Sleep(50); // 50ms 대기
+                Thread.Sleep(100); // 50ms 대기
             }
         }
 

@@ -158,7 +158,7 @@ namespace Teacher
                 // Byte를 읽기위해 Stream을 받아 Dictionary에 저장해둠 
                 NetworkStream stream = client.GetStream();
                 clientStreams[client] = stream;
-                Trace.WriteLine("Client connected");
+                Trace.WriteLine($"Client connected: {client.Client.RemoteEndPoint}");
 
                 // KAU: Value값이 없는 것을 방지하기 위해 null 값을 추가함
                 clientReceivedTimestamps[client] = null;
@@ -346,7 +346,7 @@ namespace Teacher
                         while (offset < bytes.Length)
                         {
                             // 한 패킷의 길이: 1024바이트(-10은 헤더 길이)와 (메시지 전체 길이 - offset)의 최솟값
-                            int length = Math.Min(Program.PACKET_SIZE - 10, bytes.Length - offset);
+                            int length = Math.Min(packetSize - 10, bytes.Length - offset);
                             byte[] buffer = new byte[length + 10]; // 패킷 번호를 저장할 공간(헤더) 추가
 
                             // 패킷 번호를 헤더에 삽입
